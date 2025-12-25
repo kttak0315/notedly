@@ -1,28 +1,30 @@
 const express = require('express');
 const { ApolloServer, gql } = require('apollo-server-express');
 require('dotenv').config();
+
 const db = require('./db');
+const models = require('./models');
 
 const port = process.env.PORT || 4000;
 const DB_HOST = process.env.DB_HOST;
 
-let notes = [
-  {
-    id: '1',
-    content: 'This is a note',
-    author: 'Adam Scott'
-  },
-  {
-    id: '2',
-    content: 'This is another note',
-    author: 'Harlow Everly'
-  },
-  {
-    id: '3',
-    content: 'Oh hey look, another note!',
-    author: 'Riley Harrison'
-  }
-];
+// let notes = [
+//   {
+//     id: '1',
+//     content: 'This is a note',
+//     author: 'Adam Scott'
+//   },
+//   {
+//     id: '2',
+//     content: 'This is another note',
+//     author: 'Harlow Everly'
+//   },
+//   {
+//     id: '3',
+//     content: 'Oh hey look, another note!',
+//     author: 'Riley Harrison'
+//   }
+// ];
 
 const typeDefs = gql`
   type Note {
@@ -33,8 +35,8 @@ const typeDefs = gql`
 
   type Query {
     hello: String
-    notes: [Note!]!
-    note(id: ID!): Note!
+    notes: [Note]
+    note(id: ID!): Note
   }
 
   type Mutation {
@@ -45,20 +47,26 @@ const typeDefs = gql`
 const resolvers = {
   Query: {
     hello: () => 'Hello World!',
-    notes: () => notes,
+
+    // ⬇️ [수정 전] 원래 이렇게 되어 있던 줄을...
+    // notes: () => notes,
+
+    // ⬇️ [수정 후] 이렇게 바꿔주세요! (여기에 붙여넣기)
+    notes: async () => {
+      return await models.Note.find();
+    },
+
+    // (note: ... 부분은 일단 그대로 두셔도 됩니다)
     note: (parent, args) => {
       return notes.find(note => note.id === args.id);
     }
   },
   Mutation: {
-    newNote: (parent, args) => {
-      let noteValue = {
-        id: notes.length + 1,
+    newNote: async (parent, args) => {
+      return await models.Note.create({
         content: args.content,
         author: 'Adam Scott'
-      };
-      notes.push(noteValue);
-      return noteValue;
+      });
     }
   }
 };
